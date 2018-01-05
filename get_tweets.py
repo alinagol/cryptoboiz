@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 # Options
 today = datetime.now().strftime("%Y-%m-%d")
-tags = ['ripple', 'tron', 'ethereum', 'XRP', 'ETH', 'TRX']
+tags = ['ripple', 'tron', 'ethereum']
 
 
 # Functions
@@ -27,7 +27,7 @@ cfg = json.load(open(DB_CONFG_PATH))
 db = 'mongodb://{host}:{port}'.format(**cfg)
 with MongoClient(db) as client:
     cryptotweets = client[cfg['database']][cfg['collection']]
-
+    cryptoscores = client[cfg['database']]['scores']
 
 # Twitter connect
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
@@ -41,7 +41,7 @@ for searchtag in tags:
     for tweet in tweepy.Cursor(api.search,
                            q=searchtag,
                            include_entities=True,
-                           since=today).items():
+                           since=today).items(50):
 
         twt = tweet._json
 
