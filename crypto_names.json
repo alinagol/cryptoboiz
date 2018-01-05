@@ -1,0 +1,5 @@
+{
+  "ripple": ["ripple", "Ripple", "XRP", "xrp"],
+  "tron": ["tron", "Tron", "TRX", "trx"],
+  "ethereum": ["ethereum", "Ethereum", "ETH", "eth"]
+}

@@ -6,17 +6,23 @@ import json
 from pymongo import MongoClient
 import re
 import dateutil.parser
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 # Options
 today = datetime.now().strftime("%Y-%m-%d")
-tags = ['ripple', 'tron', 'ethereum']
+
+tags_raw = []
+crypto_names = json.load(open('crypto_names.json'))
+for key, value in crypto_names.items():
+    tags_raw.append(value)
+
+tags = [item for sublist in tags_raw for item in sublist]
 
 
 # Functions
-def clean_tweet(tweet):
-    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
+def clean_tweet(txt):
+    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", txt).split())
 
 
 # DB connect
@@ -38,10 +44,7 @@ api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 # Get tweets
 for searchtag in tags:
 
-    for tweet in tweepy.Cursor(api.search,
-                           q=searchtag,
-                           include_entities=True,
-                           since=today).items(50):
+    for tweet in tweepy.Cursor(api.search, q=searchtag, include_entities=True, since=today).items():
 
         twt = tweet._json
 
@@ -98,9 +101,13 @@ for searchtag in tags:
         polarity = sent.polarity
         subjectivity = sent.subjectivity
 
-        # insert in db
+        if subjectivity != 0:
+            weighted_sent = polarity/subjectivity
+        else:
+            weighted_sent = 0
 
-        if not cryptotweets.find_one({'tweet_id': id}):
+        # insert in db
+        if not cryptotweets.find_one({'tweet_id': id}) and 'RT @' not in text:
 
             cryptotweets.insert({'tweet_id': id,
                              'tag': searchtag,
@@ -117,7 +124,8 @@ for searchtag in tags:
                                  'text': text,
                                  'created': created,
                                  'polarity': polarity,
-                                 'subjectivity': subjectivity
+                                 'subjectivity': subjectivity,
+                                 'weighted_sentiment': weighted_sent
                              }})
 
             try:
