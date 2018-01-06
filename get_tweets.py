@@ -44,7 +44,11 @@ api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 # Get tweets
 for searchtag in tags:
 
-    for tweet in tweepy.Cursor(api.search, q=searchtag, include_entities=True, since=today).items():
+    for tweet in tweepy.Cursor(api.search,
+                               q=searchtag,
+                               include_entities=True,
+                               language='en',
+                               since=today).items():
 
         twt = tweet._json
 
