@@ -109,3 +109,6 @@ credentials.py
 
 # logs
 nohup.out
+
+# other
+coinmarketcap_cache.sqlite

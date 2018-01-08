@@ -11,14 +11,7 @@ from datetime import datetime
 
 # Options
 today = datetime.now().strftime("%Y-%m-%d")
-
-tags_raw = []
-crypto_names = json.load(open('crypto_names.json'))
-for key, value in crypto_names.items():
-    tags_raw.append(value)
-
-tags = [item for sublist in tags_raw for item in sublist]
-
+tags = json.load(open('crypto_names.json'))
 
 # Functions
 def clean_tweet(txt):
@@ -44,13 +37,15 @@ api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 # Get tweets
 for searchtag in tags:
 
+    print('Searching for tweets about', searchtag)
+
     for tweet in tweepy.Cursor(api.search,
                                q=searchtag,
                                include_entities=True,
-                               language='en',
-                               since=today).items():
+                               since=today).items(100):
 
         twt = tweet._json
+
 
         # essential entities
         created = dateutil.parser.parse(twt['created_at'])

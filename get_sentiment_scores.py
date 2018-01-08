@@ -6,16 +6,14 @@ import tweepy
 import dateutil.parser
 from datetime import datetime
 from coinmarketcap import Market
+import time
 
 
 # Options
 today = datetime.now().strftime("%Y-%m-%d")
 today_mdgb = dateutil.parser.parse(today)
 
-coins = []
-crypto_names = json.load(open('crypto_names.json'))
-for key, value in crypto_names.items():
-    coins.append(key)
+coins = json.load(open('crypto_names.json'))
 
 coinmarketcap = Market()
 
@@ -38,14 +36,10 @@ api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
 
 # Sentiment scores db
-if not cryptoscores.find_one({'currency': 'ripple'}):
-    cryptoscores.insert({'currency': 'ripple'})
 
-if not cryptoscores.find_one({'currency': 'tron'}):
-    cryptoscores.insert({'currency': 'tron'})
-
-if not cryptoscores.find_one({'currency': 'ethereum'}):
-    cryptoscores.insert({'currency': 'ethereum'})
+for coin in coins:
+    if not cryptoscores.find_one({'currency': coin}):
+        cryptoscores.insert({'currency': coin})
 
 
 # Get scores for today
@@ -64,24 +58,37 @@ for item in list(summary):
 
     try:
 
-        stats = coinmarketcap.ticker(item['_id']['currency'], limit=3, convert='EUR')
+        try:
+            stats = coinmarketcap.ticker(item['_id']['currency'], convert='EUR')
+        except:
+            print('Sleeping...')
+            time.sleep(60)
+            print('Retrying CoinMarketCap...')
+            try:
+                stats = coinmarketcap.ticker(item['_id']['currency'], convert='EUR')
+            except:
+                pass
 
-        message = 'Currency: %s \nPrice: %s \nSentiment: %s \nWeighted sentiment: %s \nNumber of tweets: %s' \
+        print(stats)
+
+        if stats:
+
+            message = 'Currency: %s \nPrice: %s \nSentiment: %s \nWeighted sentiment: %s \nNumber of tweets: %s' \
               % (item['_id']['currency'],
                  float(stats[0]['price_eur']),
                  round(item['avg_sent'], 5),
                  round(item['w_avg_sent'], 5),
                  item['number_of_tweets'])
 
-        if item['_id']['date'] == today:
-            try:
-                api.update_status(message)
-                print('Tweet posted')
-            except:
-                print('Cannot post a tweet')
-                pass
+        # if item['_id']['date'] == today:
+        #     try:
+        #         api.update_status(message)
+        #         print('Tweet posted')
+        #     except:
+        #         print('Cannot post a tweet')
+        #         pass
 
-        cryptoscores.update({'currency': item['_id']['currency']},
+            cryptoscores.update({'currency': item['_id']['currency']},
                         {'$push': {'scores': {'date': dateutil.parser.parse(item['_id']['date']),
                                               'avg_sent': item['avg_sent'],
                                               'w_avg_sent': item['w_avg_sent'],
