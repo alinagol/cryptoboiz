@@ -112,3 +112,5 @@ nohup.out
 
 # other
 coinmarketcap_cache.sqlite
+drafts/
+.idea/

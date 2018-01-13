@@ -7,11 +7,17 @@ from pymongo import MongoClient
 import re
 import dateutil.parser
 from datetime import datetime
+from coinmarketcap import Market
+import time
 
 
 # Options
 today = datetime.now().strftime("%Y-%m-%d")
+today_mdgb = dateutil.parser.parse(today)
+
 tags = json.load(open('crypto_names.json'))
+
+coinmarketcap = Market()
 
 # Functions
 def clean_tweet(txt):
@@ -42,7 +48,7 @@ for searchtag in tags:
     for tweet in tweepy.Cursor(api.search,
                                q=searchtag,
                                include_entities=True,
-                               since=today).items(100):
+                               since=today).items():
 
         twt = tweet._json
 
@@ -157,3 +163,74 @@ for searchtag in tags:
                 cryptotweets.update({'tweet_id': id}, {'$set': {'tweet.favourites': favourites}})
             except:
                 pass
+
+    # Insert a record in Scores collection if non-existent yet
+    if not cryptoscores.find_one({'currency': searchtag}):
+        cryptoscores.insert({'currency': searchtag})
+
+    try:
+
+        # Get prices and other market info
+        try:
+            stats = coinmarketcap.ticker(searchtag, convert='EUR')
+        except:
+            print('Sleeping...')
+            time.sleep(60)
+            print('Retrying CoinMarketCap...')
+            try:
+                stats = coinmarketcap.ticker(searchtag, convert='EUR')
+            except:
+                pass
+
+        # Get average sentiment
+        summary = cryptotweets.aggregate([{'$match': {'tweet.created': {'$gt': today_mdgb}, 'tag': searchtag}},
+                                      {'$group': {'_id': {'currency': '$tag',
+                                                          'date': {'$dateToString':
+                                                                       {'format': "%Y-%m-%d",
+                                                                        'date': '$tweet.created'}}},
+                                                  'avg_sent': {'$avg': '$tweet.polarity'},
+                                                  'w_avg_sent': {'$avg': '$tweet.weighted_sentiment'},
+                                                  'number_of_tweets': {'$sum': 1}}}])
+
+        try:
+            item = list(summary)[0]
+        except:
+            pass
+
+        print(item)
+
+        if stats and item:
+            message = 'Currency: %s \nPrice: %s \nSentiment: %s \nWeighted sentiment: %s \nNumber of tweets: %s' \
+                          % (searchtag,
+                             float(stats[0]['price_eur']),
+                             round(item['avg_sent'], 5),
+                             round(item['w_avg_sent'], 5),
+                             item['number_of_tweets'])
+
+                # if item['_id']['date'] == today:
+                #     try:
+                #         api.update_status(message)
+                #         print('Tweet posted')
+                #     except:
+                #         print('Cannot post a tweet')
+                #         pass
+
+            # TODO: spit into 2 updates (maybe)
+
+            cryptoscores.update({'currency': searchtag},
+                                    {'$push': {'scores': {'date': dateutil.parser.parse(item['_id']['date']),
+                                                          'avg_sent': item['avg_sent'],
+                                                          'w_avg_sent': item['w_avg_sent'],
+                                                          'num_tweets': item['number_of_tweets'],
+                                                          'price_eur': float(stats[0]['price_eur']),
+                                                          '24h_volume_eur': float(stats[0]['24h_volume_eur']),
+                                                          'available_supply': float(stats[0]['available_supply']),
+                                                          'market_cap_eur': float(stats[0]['market_cap_eur']),
+                                                          'price_btc': float(stats[0]['price_btc']),
+                                                          'total_supply': float(stats[0]['total_supply'])}}})
+
+    except:
+        pass
+
+    # delete tweets
+    cryptotweets.delete_many({'tag': searchtag})

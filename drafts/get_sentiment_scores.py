@@ -69,8 +69,6 @@ for item in list(summary):
             except:
                 pass
 
-        print(stats)
-
         if stats:
 
             message = 'Currency: %s \nPrice: %s \nSentiment: %s \nWeighted sentiment: %s \nNumber of tweets: %s' \
