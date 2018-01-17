@@ -12,7 +12,7 @@ import time
 
 
 # Parameters
-start_date = '2018-01-01'
+start_date = '2017-10-01'
 
 
 # Options

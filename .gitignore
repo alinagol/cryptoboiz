@@ -116,4 +116,6 @@ drafts/
 .idea/
 coinmarketcap_cache.sqlite
 .DS_Store
+
+
 .Rhistory
