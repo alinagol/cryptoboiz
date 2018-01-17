@@ -114,3 +114,6 @@ nohup.out
 coinmarketcap_cache.sqlite
 drafts/
 .idea/
+coinmarketcap_cache.sqlite
+.DS_Store
+.Rhistory

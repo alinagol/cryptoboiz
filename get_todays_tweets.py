@@ -19,6 +19,7 @@ tags = json.load(open('crypto_names.json'))
 
 coinmarketcap = Market()
 
+
 # Functions
 def clean_tweet(txt):
     return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", txt).split())
@@ -33,6 +34,7 @@ db = 'mongodb://{host}:{port}'.format(**cfg)
 with MongoClient(db) as client:
     cryptotweets = client[cfg['database']][cfg['collection']]
     cryptoscores = client[cfg['database']]['scores']
+
 
 # Twitter connect
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
@@ -217,7 +219,9 @@ for searchtag in tags:
 
             # TODO: spit into 2 updates (maybe)
 
-            cryptoscores.update({'currency': searchtag},
+            if not cryptoscores.find({'date': dateutil.parser.parse(item['_id']['date'])}):
+
+                cryptoscores.update({'currency': searchtag},
                                     {'$push': {'scores': {'date': dateutil.parser.parse(item['_id']['date']),
                                                           'avg_sent': item['avg_sent'],
                                                           'w_avg_sent': item['w_avg_sent'],
