@@ -187,11 +187,6 @@ for coin in tags:
 
         # TODO: add historic price lookup
 
-        for itm in cryptoscores.find({'date': dateutil.parser.parse(item['_id']['date'])}):
-            print('!!!!!!')
-            print(itm)
-            print(dateutil.parser.parse(item['_id']['date']))
-
         if not cryptoscores.find({'date': dateutil.parser.parse(item['_id']['date'])}):
 
             cryptoscores.update({'currency': coin},
