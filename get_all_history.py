@@ -187,9 +187,7 @@ for coin in tags:
 
         # TODO: add historic price lookup
 
-        if not cryptoscores.find({'date': dateutil.parser.parse(item['_id']['date'])}):
-
-            cryptoscores.update({'currency': coin},
+        cryptoscores.update({'currency': coin},
                                 {'$push': {'scores': {'date': dateutil.parser.parse(item['_id']['date']),
                                                       'avg_sent': item['avg_sent'],
                                                       'w_avg_sent': item['w_avg_sent'],
