@@ -32,10 +32,16 @@ BASE_PATH = os.path.dirname(__file__)
 DB_CONFG_PATH = os.path.normpath(os.path.join(BASE_PATH, 'dbconfig/config.json'))
 
 cfg = json.load(open(DB_CONFG_PATH))
-db = 'mongodb://{user}:{pass}@{host}:{port}'.format(**cfg)
+
+# db = 'mongodb://{host}:{port}'.format(**cfg['local'])
+# with MongoClient(db) as client:
+#     cryptotweets = client[cfg['local']['database']]['crypto']
+#     cryptoscores = client[cfg['local']['database']]['scores']
+
+db = 'mongodb://{user}:{pass}@{host}:{port}'.format(**cfg['external'])
 with MongoClient(db) as client:
-    cryptotweets = client[cfg['database']][cfg['collection']]
-    cryptoscores = client[cfg['database']]['scores']
+    cryptotweets = client[cfg['external']['database']]['crypto']
+    cryptoscores = client[cfg['external']['database']]['scores']
 
 
 # Twitter connect
@@ -50,9 +56,9 @@ for coin in tags:
     print('Getting tweets for %s since %s' % (coin, start_date))
 
     for tweet in tweepy.Cursor(api.search,
-                           q=coin,
-                           include_entities=True,
-                           since=start_date).items():
+                               q=coin,
+                               include_entities=True,
+                               since=start_date).items():
 
         twt = tweet._json
 
