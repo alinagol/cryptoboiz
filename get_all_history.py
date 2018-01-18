@@ -32,7 +32,7 @@ BASE_PATH = os.path.dirname(__file__)
 DB_CONFG_PATH = os.path.normpath(os.path.join(BASE_PATH, 'dbconfig/config.json'))
 
 cfg = json.load(open(DB_CONFG_PATH))
-db = 'mongodb://{host}:{port}'.format(**cfg)
+db = 'mongodb://{user}:{pass}@{host}:{port}'.format(**cfg)
 with MongoClient(db) as client:
     cryptotweets = client[cfg['database']][cfg['collection']]
     cryptoscores = client[cfg['database']]['scores']
